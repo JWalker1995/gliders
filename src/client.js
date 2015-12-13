@@ -44,7 +44,7 @@ window.onload = function()
 
     game = new Game(undefined);
     controller = new GameController(game, remote);
-    renderer = new GameRenderer(controller, els);
+    renderer = new GameRenderer(controller, els, 0);
 
     game.update_board('5');
     game.update_formation('5 3 e e e e e e n e e e n e e n n n e e n e k e e e n e n n e n n e e');
@@ -52,6 +52,8 @@ window.onload = function()
 
     var renderer = new CreateGameRenderer(remote, game, true);
     els.create_game.appendChild(renderer.get_el());
+
+    var open_games = [];
 
     els.welcome_name.onblur = function()
     {
@@ -110,7 +112,18 @@ window.onload = function()
     {
         var game = new Game();
         game.deserialize(data.game);
+
         var renderer = new CreateGameRenderer(remote, game, false);
         els.games_list.appendChild(renderer.get_el());
+
+        open_games[game.get_game_id()] = renderer;
+    });
+
+    remote.register_handler('join_game_notif', function(data)
+    {
+        var renderer = open_games[data.game_id];
+        if (typeof renderer === 'undefined') {return;}
+
+        renderer.join_player(data.player_name);
     });
 };

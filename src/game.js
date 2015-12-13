@@ -42,6 +42,7 @@ module.exports = function(game_id)
     this.add_cell_callback = function() {};
     this.finalize_cells_callback = function() {};
 
+    this.change_player_callback = function() {};
     this.add_piece_callback = function() {};
     this.code_warning_callback = function() {};
     this.do_action_callback = function() {};
@@ -51,6 +52,7 @@ module.exports = function(game_id)
 
     this.get_game_id = function() {return game_id;};
     this.get_player_names = function() {return player_names;};
+    this.get_num_players = function() {return num_players;};
     this.get_board_code = function() {return board_code;};
     this.get_formation_code = function() {return formation_code;};
     this.get_options_code = function() {return options_code;};
@@ -155,26 +157,30 @@ module.exports = function(game_id)
         player_spawns = Util.fill_array(num_players, opts.spawns);
     };
 
-    this.add_player = function(name)
+    this.join_player = function(name)
     {
-        if (player_names.length >= num_players)
+        var index = player_names.length;
+        if (index >= num_players)
         {
             console.error('Cannot add another player to game, already at max of ' + num_players + ' players');
             return;
         }
+
         player_names.push(name);
+        _this.change_player_callback(index, name);
     };
 
     this.remove_player = function(name)
     {
-        var i = player_names.indexOf(name);
-        if (i === -1)
+        var index = player_names.indexOf(name);
+        if (index === -1)
         {
             return false;
         }
         else
         {
-            player_names.splice(i, 1);
+            player_names.splice(index, 1);
+            _this.change_player_callback(index, undefined);
         }
     };
 
@@ -190,7 +196,7 @@ module.exports = function(game_id)
     };
     this.deserialize = function(obj)
     {
-        if (obj.game_id && typeof game_id === 'undefined') {game_id = obj.game_id;}
+        if (typeof obj.game_id === 'number' && typeof game_id === 'undefined') {game_id = obj.game_id;}
         if (obj.board) {_this.update_board(obj.board);}
         if (obj.formation) {_this.update_formation(obj.formation);}
         if (obj.options) {_this.update_options(obj.options);}

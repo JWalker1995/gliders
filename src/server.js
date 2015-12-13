@@ -69,6 +69,15 @@ var ServerApp = function()
         if (typeof game !== 'object') {return;}
 
         game.add_player(remote.get_name());
+
+        for (var i = 0; i < open_games_subscribers.length; i++)
+        {
+            open_games_subscribers[i].write({
+                'q': 'join_game_notif',
+                'game_id': game_id,
+                'player_name': remote.get_name(),
+            });
+        }
     };
 
     var init = function()
@@ -119,7 +128,7 @@ var ServerApp = function()
 
     var get_ip_address = function()
     {
-        return process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+        return process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
     };
     var get_port = function()
     {

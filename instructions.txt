@@ -1,0 +1,24 @@
+Gliders is a 2, 3, or 6 player board game, played on a hexagonally tiled grid. Both the board setup and formation setup are configurable, allowing a practically unlimited number of scenarios.
+
+The goal of the game is to capture (jump onto or shoot) the other player's king or kings (the number of kings depends on the formation). Each player moves sequentially until only the kings of a single player remains.
+
+A move consists of exactly one of three options, each of which will be explained in detail below:
+1. Move a single piece exactly one space.
+2. Shoot any number of gliders.
+3. Spawn a piece from a king.
+
+1. Move a single piece exactly one space:
+Normal pieces can only move onto empty spaces or enemy kings. If a piece moves onto an enemy king, the king is removed from play.
+King pieces cannot move onto one of their own pieces or off the board, but otherwise they have no restrictions where they can move. If a king moves onto an enemy piece, that piece is removed from play.
+So in summary, when moving, normal pieces can't capture each other, but they can capture and be captured by kings.
+
+2. Shoot any number of gliders:
+A piece is a glider in a direction D if there is a friendly piece in direction D-120 degrees and another friendly piece in direction D+120 degrees, and no pieces in diretion D+180 degrees (opposite D). So a minimal glider looks like this: http://pasteboard.co/2PQT4IhA.png. I call these gliders because they look like the gliders in Conway's Game of Life.
+A glider can be shot straight forward (in direction D). When a glider is shot, the center piece is moved in direction D until it hits an object. If it hits a friendly piece, the glider piece is moved onto the space before the friendly piece. If it hits an enemy piece, that piece is removed from the board and the glider piece is moved into its place. Finally, if it hits the edge of the board, the glider piece remains on the board in the cell right before it would go off.
+Finally, multiple gliders can be shot in the same turn. In addition, if the act of shooting a glider creates another glider, that glider can be shot on the same turn as well.
+
+3. Spawn a piece from a king:
+At the beginning of the game, each player gets a number of "spawns". A king piece can use up one of their "spawns" and place a new non-king piece in any empty cell directly adjacent to the king.
+
+Winning:
+If a player has no more kings at the end of the turn cycle, then he is eliminated and all of his pieces are removed from the board. A player wins when he is the last remaining player.

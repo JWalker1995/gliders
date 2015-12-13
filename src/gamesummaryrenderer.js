@@ -1,12 +1,8 @@
 var Config = require('./config.js');
 var Util = require('./util.js');
 
-module.exports = function(remote, game, editable)
+module.exports = function(remote, game)
 {
-    // Formations:
-    // 5/5 3 e e e e e e n e e e n e e n n n e e n e k e e e n e n n e n n e e
-    // 5/3 3 e e e e e e e k/spawns=10
-
     var _this = this;
 
     var el;
@@ -32,24 +28,8 @@ module.exports = function(remote, game, editable)
             html += '<span class="open_game_timer"></span>'
         html += '</div>';
 
-        if (editable)
-        {
-            html += '<div class="open_game_details">';
-                html += '<span class="text_input_label">Board code: </span>';
-                html += '<span class="open_game_board text_input"' + (editable ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_board_code()) + '</span>';
-                html += '<br />';
-                html += '<span class="text_input_label">Formation code: </span>';
-                html += '<span class="open_game_formation text_input"' + (editable ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_formation_code()) + '</span>';
-                html += '<br />';
-                html += '<span class="text_input_label">Options code: </span>';
-                html += '<span class="open_game_options text_input"' + (editable ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_options_code()) + '</span>';
-                html += '<br />';
-                html += '<span class="open_game_button button">' + (editable ? 'Publish game' : 'Join game') + '</span>';
-            html += '</div>';
-        }
-
         el = document.createElement('div');
-        Util.add_class(el, 'open_game' + (editable ? ' editable' : ''));
+        Util.add_class(el, 'open_game');
         el.innerHTML = html;
 
         els = {
@@ -83,31 +63,6 @@ module.exports = function(remote, game, editable)
                 'game_id': game.get_game_id(),
             });
         };
-
-        if (editable)
-        {
-            els.board.onkeyup = function()
-            {
-                game.update_board(els.board.innerText);
-            };
-            els.formation.onkeyup = function()
-            {
-                game.update_formation(els.formation.innerText);
-            };
-            els.options.onkeyup = function()
-            {
-                game.update_options(els.options.innerText);
-            };
-
-            els.button.onclick = function()
-            {
-                remote.write({
-                    'q': 'create_game',
-                    'game': game.serialize(),
-                });
-                el.parentNode.removeChild(el);
-            };
-        }
     };
 
     this.get_el = function() {return el;};
@@ -122,25 +77,6 @@ module.exports = function(remote, game, editable)
         players[index] = player_name;
         debugger;
         els.players_list.childNodes[index].innerText = player_name;
-    };
-
-    this.update_game = function(new_game)
-    {
-        var update_prop = function(key)
-        {
-            if (game[key] !== new_game[key])
-            {
-                var el = els[key];
-                el.innerText = game[key] = new_game[key];
-                Util.add_class(el, 'open_game_changed');
-                setTimeout(function()
-                {
-                    Util.remove_class(el, 'open_game_changed');
-                }, 1000);
-            }
-        };
-        update_prop('players_have');
-        update_prop('players_need');
     };
 
     init();

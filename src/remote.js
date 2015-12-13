@@ -61,6 +61,14 @@ module.exports = function(app, spark)
 
     if (app)
     {
+        var join_game = function(data)
+        {
+            if (!name) {return;}
+            name_locked = true;
+
+            app.join_game(data.game_id, _this);
+        };
+
         this.register_handler('set_name', function(data)
         {
             if (!name_locked && typeof data.name === 'string')
@@ -79,13 +87,7 @@ module.exports = function(app, spark)
             join_game({'game_id': game.get_game_id()});
         });
 
-        var join_game = function(data)
-        {
-            if (!name) {return;}
-            name_locked = true;
-
-            app.join_game(data.game_id, _this);
-        };
+        this.register_handler('join_game', join_game);
 
         spark.on('close', function()
         {
