@@ -1,6 +1,8 @@
 var Config = require('./config.js');
 var HexGrid = require('./hexgrid.js');
+var ClientError = require('./clienterror.js');
 var Util = require('./util.js');
+var Callback = require('./callback.js');
 
 module.exports = function(game_id)
 {
@@ -38,17 +40,17 @@ module.exports = function(game_id)
     this.ACTION_SHOOT = 2;
     this.ACTION_SPAWN = 3;
 
-    this.reset_cells_callback = function() {};
-    this.add_cell_callback = function() {};
-    this.finalize_cells_callback = function() {};
+    this.reset_cells_callback = new Callback();
+    this.add_cell_callback = new Callback();
+    this.finalize_cells_callback = new Callback();
 
-    this.change_player_callback = function() {};
-    this.add_piece_callback = function() {};
-    this.code_warning_callback = function() {};
-    this.do_action_callback = function() {};
-    this.remove_piece_callback = function() {};
-    this.eliminate_player_callback = function() {};
-    this.end_turn_callback = function() {};
+    this.change_player_callback = new Callback();
+    this.add_piece_callback = new Callback();
+    this.code_warning_callback = new Callback();
+    this.do_action_callback = new Callback();
+    this.remove_piece_callback = new Callback();
+    this.eliminate_player_callback = new Callback();
+    this.end_turn_callback = new Callback();
 
     this.get_game_id = function() {return game_id;};
     this.get_player_names = function() {return player_names;};
@@ -74,10 +76,6 @@ module.exports = function(game_id)
 
             neighbor_offsets = [-board_diam + 1, 1, board_diam, board_diam - 1, -1, -board_diam];
             neighbor_offsets = neighbor_offsets.concat(neighbor_offsets);
-
-            num_players = 6 / sectors;
-            players_dead = Util.fill_array(num_players, undefined);
-            player_spawns = Util.fill_array(num_players, opts.spawns);
         };
         var add_cell = function(x, y, type)
         {
@@ -85,19 +83,19 @@ module.exports = function(game_id)
             else if (type === 'w') {type = _this.CELL_WALL;}
             else if (type !== 'v' && type)
             {
-                _this.code_warning_callback('Invalid type code "' + type + '"');
+                _this.code_warning_callback.call('Invalid type code "' + type + '"');
                 return;
             }
             else {type = _this.CELL_EMPTY;}
 
             var loc = _this.get_loc(x, y);
             board[loc] = type;
-            _this.add_cell_callback(loc, type);
+            _this.add_cell_callback.call(loc, type);
         };
 
-        _this.reset_cells_callback();
+        _this.reset_cells_callback.call();
         HexGrid.str_to_grid(code, meta_callback, add_cell, _this.code_warning_callback);
-        _this.finalize_cells_callback();
+        _this.finalize_cells_callback.call();
 
         pieces = [];
     };
@@ -109,10 +107,16 @@ module.exports = function(game_id)
         for (var i = 0; i < pieces.length; i++)
         {
             board[pieces[i].loc] = _this.CELL_EMPTY;
-            _this.remove_piece_callback(pieces[i]);
+            _this.remove_piece_callback.call(pieces[i]);
         }
         pieces = [];
 
+        var meta_callback = function(radius, sectors)
+        {
+            num_players = 6 / sectors;
+            players_dead = Util.fill_array(num_players, undefined);
+            player_spawns = Util.fill_array(num_players, opts.spawns);
+        };
         var add_piece = function(x, y, type, sector)
         {
             if (type === 'n' || type === 'k')
@@ -121,24 +125,24 @@ module.exports = function(game_id)
 
                 if (board[loc] === _this.CELL_EDGE)
                 {
-                    _this.code_warning_callback('Make piece location is an edge cell');
+                    _this.code_warning_callback.call('Make piece location is an edge cell');
                     return;
                 }
                 if (board[loc] !== _this.CELL_EMPTY)
                 {
-                    _this.code_warning_callback('Make piece location is already occupied');
+                    _this.code_warning_callback.call('Make piece location is already occupied');
                     return;
                 }
 
                 var piece = make_piece(sector, loc, type === 'k');
-                _this.add_piece_callback(piece);
+                _this.add_piece_callback.call(piece);
             }
             else if (type !== 'e' && type)
             {
-                _this.code_warning_callback('Invalid type code "' + type + '"');
+                _this.code_warning_callback.call('Invalid type code "' + type + '"');
             }
         };
-        HexGrid.str_to_grid(code, function() {}, add_piece, _this.code_warning_callback);
+        HexGrid.str_to_grid(code, meta_callback, add_piece, _this.code_warning_callback);
     };
 
     this.update_options = function(code)
@@ -159,15 +163,21 @@ module.exports = function(game_id)
 
     this.join_player = function(name)
     {
+        if (player_names.indexOf(name) !== -1)
+        {
+            throw new ClientError('You have already joined this game');
+        }
+
         var index = player_names.length;
         if (index >= num_players)
         {
-            console.error('Cannot add another player to game, already at max of ' + num_players + ' players');
-            return;
+            throw new ClientError('Too slow, this game is already full');
         }
 
         player_names.push(name);
-        _this.change_player_callback(index, name);
+        _this.change_player_callback.call(index, name);
+
+        return player_names.length === num_players;
     };
 
     this.remove_player = function(name)
@@ -180,7 +190,7 @@ module.exports = function(game_id)
         else
         {
             player_names.splice(index, 1);
-            _this.change_player_callback(index, undefined);
+            _this.change_player_callback.call(index, undefined);
         }
     };
 
@@ -386,7 +396,7 @@ module.exports = function(game_id)
         }
 
         turn_actions.push(action);
-        _this.do_action_callback(piece, action);
+        _this.do_action_callback.call(piece, action);
 
         return true;
     };
@@ -427,13 +437,13 @@ module.exports = function(game_id)
 
         board[piece.loc] = _this.CELL_EMPTY;
 
-        _this.remove_piece_callback(piece);
+        _this.remove_piece_callback.call(piece);
 
         if (piece.is_king)
         {
             if (is_player_eliminated(piece.player_id))
             {
-                _this.eliminate_player_callback();
+                _this.eliminate_player_callback.call();
             }
         }
     };
@@ -461,7 +471,7 @@ module.exports = function(game_id)
         var actions = turn_actions;
         turn_actions = [];
 
-        _this.end_turn_callback(actions);
+        _this.end_turn_callback.call(actions);
     };
 
     this.get_row = function(loc)

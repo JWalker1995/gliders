@@ -14,6 +14,10 @@ html, body {
     outline: 0;
     padding: 0px 8px;
 }
+.text_input.disabled {
+    color: gray;
+    cursor: default;
+}
 .text_input:focus {
     border-bottom-color: #4AF;
 }
@@ -38,6 +42,10 @@ html, body {
     background-color: #4AF;
 }
 
+.hidden {
+    display: none;
+}
+
 
 
 
@@ -48,11 +56,27 @@ html, body {
 
 .right_column {
     float: right;
-    width: 400px;
+    width: 380px;
     height: 100%;
     background-color: silver;
+    padding: 10px;
 }
 
+
+#error_container {
+    position: fixed;
+    left: 50%;
+    width: 500px;
+    margin-left: -250px;
+    padding: 8px;
+    text-align: center;
+    background-color: #F88;
+    border: 1px solid gray;
+    border-radius: 8px;
+}
+#error_container:empty {
+    display: none;
+}
 
 #board {
     width: 100%;
@@ -80,6 +104,12 @@ html, body {
 #games_list .open_game {
     background-color: #EEE;
     position: relative;
+    cursor: default;
+    -webkit-transition: background-color 0.3s;
+    transition: background-color 0.3s;
+}
+#games_list .open_game:hover {
+    background-color: #ADF;
 }
 
 /* Generated with http://cssarrowplease.com */
@@ -88,7 +118,7 @@ html, body {
     position: absolute;
     left: -60px;
     margin-top: -1px;
-    background-color: #BEF;
+    background-color: #ADF;
     padding: 10px;
     border: 1px solid blue;
     border-radius: 4px;
@@ -113,7 +143,7 @@ html, body {
     position: absolute;
 }
 #games_list .open_game .open_game_join:after {
-    border-left-color: #BEF;
+    border-left-color: #ADF;
     border-width: 10px;
     margin-top: -10px;
 }
@@ -121,6 +151,19 @@ html, body {
     border-left-color: #00F;
     border-width: 11px;
     margin-top: -11px;
+}
+
+#games_list .open_game .open_game_players_list {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+}
+
+#games_list .open_game .open_game_player {
+    display: table-cell;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 #games_list .open_game .open_game_summary {

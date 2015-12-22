@@ -19,11 +19,46 @@ var ServerApp = function()
     var primus;
     var script = Config.uncompiled_script;
 
+    var online_names = {};
+
     var open_games = [];
     var open_games_subscribers = [];
 
     var running_games = [];
     var running_games_subscribers = [];
+
+    var write_each = function(subscribers, data)
+    {
+        for (var i = 0; i < subscribers.length; i++)
+        {
+            subscribers[i].write(data);
+        }
+    };
+
+    this.make_guest_name = function()
+    {
+        while (true)
+        {
+            var name = 'guest_' + (Math.random() + '').substr(2, 5);
+            if (this.use_name(name)) {return name;}
+        }
+    };
+    this.use_name = function(name)
+    {
+        if (typeof online_names[name] === 'undefined')
+        {
+            online_names[name] = true;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    };
+    this.free_name = function(name)
+    {
+        online_names[name] = undefined;
+    };
 
     this.subscribe_open_games = function(remote)
     {
@@ -31,6 +66,8 @@ var ServerApp = function()
 
         for (var i = 0; i < open_games.length; i++)
         {
+            if (!open_games[i]) {continue;}
+            
             remote.write({
                 'q': 'open_games_push',
                 'game': open_games[i].serialize(),
@@ -51,33 +88,43 @@ var ServerApp = function()
         open_games[game.get_game_id()] = game;
 
         game.deserialize(data);
-        data = game.serialize();
 
-        for (var i = 0; i < open_games_subscribers.length; i++)
-        {
-            open_games_subscribers[i].write({
-                'q': 'open_games_push',
-                'game': data,
-            });
-        }
+        write_each(open_games_subscribers, {
+            'q': 'open_games_push',
+            'game': game.serialize(),
+        });
 
         return game;
     };
     this.join_game = function(game_id, remote)
     {
         var game = open_games[game_id];
-        if (typeof game !== 'object') {return;}
-
-        game.add_player(remote.get_name());
-
-        for (var i = 0; i < open_games_subscribers.length; i++)
+        if (typeof game !== 'object')
         {
-            open_games_subscribers[i].write({
-                'q': 'join_game_notif',
-                'game_id': game_id,
-                'player_name': remote.get_name(),
-            });
+            throw new Error('Game id does not exist');
         }
+
+        var full = game.join_player(remote.get_name());
+
+        write_each(open_games_subscribers, {
+            'q': 'join_game_notif',
+            'game_id': game_id,
+            'player_name': remote.get_name(),
+        });
+
+        if (full)
+        {
+            open_games[game_id] = undefined;
+            start_game(game);
+        }
+    };
+
+    var start_game = function(game)
+    {
+        write_each(open_games_subscribers, {
+            'q': 'start_game',
+            'game_id': game.get_game_id(),
+        });
     };
 
     var init = function()

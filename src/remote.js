@@ -1,3 +1,7 @@
+var RemoteServer = require('./remoteserver.js');
+var RemoteClient = require('./remoteclient.js');
+var ClientError = require('./clienterror.js');
+
 module.exports = function(app, spark)
 {
     var _this = this;
@@ -7,11 +11,7 @@ module.exports = function(app, spark)
     var send = [];
     var send_timeout;
 
-    var name = 'guest';
-    var name_locked = false;
-    var in_games = [];
-
-    this.get_name = function() {return name;};
+    this.get_spark = function() {return spark;};
 
     spark.on('data', function(data)
     {
@@ -25,12 +25,42 @@ module.exports = function(app, spark)
                     var handler = handlers[obj.q];
                     if (typeof handler === 'function')
                     {
-                        handler(obj);
+                        try
+                        {
+                            handler(obj);
+                        }
+                        catch (e)
+                        {
+                            handle_error(e);
+                        }
                     }
                 }
             }
         }
     });
+    var handle_error = function(error)
+    {
+        if (error instanceof ClientError)
+        {
+            _this.write({
+                'q': 'error',
+                'msg': error.get_message(),
+            });
+
+            var code = error.get_code();
+            if (code)
+            {
+                _this.write({
+                    'q': 'error_' + code,
+                    'data': error.get_data(),
+                });
+            }
+        }
+        else
+        {
+            throw error;
+        }
+    };
 
     this.register_handler = function(method, callback)
     {
@@ -39,7 +69,7 @@ module.exports = function(app, spark)
 
     this.write = function(data)
     {
-        send.push(data);
+        send.push(JSON.parse(JSON.stringify(data)));
         if (typeof send_timeout === 'undefined')
         {
             send_timeout = setTimeout(function()
@@ -51,49 +81,13 @@ module.exports = function(app, spark)
         }
     };
 
-    this.subscribe = function(public_id)
-    {
-        _this.write({
-            'q': 'subs',
-            'id': public_id,
-        });
-    };
-
     if (app)
     {
-        var join_game = function(data)
-        {
-            if (!name) {return;}
-            name_locked = true;
-
-            app.join_game(data.game_id, _this);
-        };
-
-        this.register_handler('set_name', function(data)
-        {
-            if (!name_locked && typeof data.name === 'string')
-            {
-                name = data.name;
-            }
-        });
-
-        this.register_handler('create_game', function(data)
-        {
-            if (!name) {return;}
-
-            data.game.player_names = [];
-            var game = app.create_game(data.game);
-
-            join_game({'game_id': game.get_game_id()});
-        });
-
-        this.register_handler('join_game', join_game);
-
-        spark.on('close', function()
-        {
-            app.unsubscribe_open_games(_this);
-        });
-
-        app.subscribe_open_games(_this);
+        new RemoteServer(app, this);
     }
+    else
+    {
+        new RemoteClient(this);
+    }
+    console.log('new');
 };

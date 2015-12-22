@@ -2,16 +2,15 @@ var Config = require('./config.js');
 var HexGridView = require('./hexgridview.js');
 var Util = require('./util.js');
 
-module.exports = function(controller, els, player_id)
+module.exports = function(els)
 {
     var _this = this;
-
-    var game = controller.get_game();
 
     var grid = new HexGridView(els.board, game);
 
     var shown_actions = [];
     var clicked_piece;
+    var player_id;
 
     var init = function()
     {
@@ -107,12 +106,12 @@ module.exports = function(controller, els, player_id)
         }
     };
 
-    Util.add_callback(game, 'code_warning_callback', function(msg)
+    game.code_warning_callback.add(function(msg)
     {
         console.warn(msg);
     });
 
-    Util.add_callback(game, 'add_piece_callback', function(piece)
+    game.add_piece_callback.add(function(piece)
     {
         var el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         grid.set_transform(el, piece.loc);
@@ -155,7 +154,7 @@ module.exports = function(controller, els, player_id)
     var show_piece_actions = function(piece)
     {
         if (piece.player_id !== player_id) {return;}
-        
+
         var actions = game.get_piece_actions(piece);
 
         for (var i = 0; i < actions.length; i++)
@@ -184,7 +183,7 @@ module.exports = function(controller, els, player_id)
         shown_actions = [];
     };
 
-    Util.add_callback(game, 'do_action_callback', function(piece, action)
+    game.do_action_callback.add(function(piece, action)
     {
         update_end_turn_button();
 
@@ -194,12 +193,12 @@ module.exports = function(controller, els, player_id)
         hide_piece_actions();
     });
 
-    Util.add_callback(game, 'remove_piece_callback', function(piece)
+    game.remove_piece_callback.add(function(piece)
     {
         els.board.removeChild(piece.el);
     });
 
-    Util.add_callback(game, 'end_turn_callback', function(actions)
+    game.end_turn_callback.add(function(actions)
     {
         update_end_turn_button();
     });
@@ -208,6 +207,11 @@ module.exports = function(controller, els, player_id)
     {
         var method = game.is_end_turn_valid() ? 'removeAttribute' : 'setAttribute';
         els.end_turn[method]('disabled', 'disabled');
+    };
+
+    this.set_player_id = function(new_player_id)
+    {
+        player_id = new_player_id;
     };
 
     init_els();

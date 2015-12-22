@@ -1,5 +1,6 @@
 var Config = require('./config.js');
 var Util = require('./util.js');
+var Callback = require('./callback.js');
 
 module.exports = function(remote, game)
 {
@@ -7,6 +8,8 @@ module.exports = function(remote, game)
 
     var el;
     var els;
+
+    this.show_setup_callback = new Callback();
 
     var init = function()
     {
@@ -36,10 +39,6 @@ module.exports = function(remote, game)
             'join': el.getElementsByClassName('open_game_join')[0],
             'players_list': el.getElementsByClassName('open_game_players_list')[0],
             'timer': el.getElementsByClassName('open_game_timer')[0],
-            'board': el.getElementsByClassName('open_game_board')[0],
-            'formation': el.getElementsByClassName('open_game_formation')[0],
-            'options': el.getElementsByClassName('open_game_options')[0],
-            'button': el.getElementsByClassName('open_game_button')[0],
         };
 
         var players = game.get_player_names();
@@ -47,14 +46,11 @@ module.exports = function(remote, game)
         {
             if (typeof players[i] === 'string')
             {
-                _this.join_player(players[i]);
+                els.players_list.childNodes[i].innerText = players[i];
             }
         }
 
-        el.onclick = function()
-        {
-            Util.toggle_class(el, 'expanded');
-        };
+        el.onmouseover = _this.show_setup_callback.call;
 
         els.join.onclick = function()
         {
@@ -75,31 +71,8 @@ module.exports = function(remote, game)
         if (index === -1) {index = players.length;}
 
         players[index] = player_name;
-        debugger;
         els.players_list.childNodes[index].innerText = player_name;
     };
 
     init();
-
-    /*
-                <fieldset class="create_game_options">
-                    <legend>Create game</legend>
-                    <select id="create_game_preset">
-                        <option value="">-- Load preset --</option>
-                        <option value="5/5,3,e,e,e,e,e,e,n,e,e,e,n,e,e,n,n,n,e,e,n,e,k,e,e,e,n,e,n,n,e,n,n,e,e">Shield</option>
-                        <option value="5/3,3,e,e,e,e,e,e,e,k/spawns=10">Spawn from king</option>
-                    </select>
-                    <br />
-                    <label for="create_game_board">Board code: </label>
-                    <input id="create_game_board" type="text" value="5" />
-                    <br />
-                    <label for="create_game_formation">Formation code: </label>
-                    <input id="create_game_formation" type="text" value="5,3,e,e,e,e,e,e,n,e,e,e,n,e,e,n,n,n,e,e,n,e,k,e,e,e,n,e,n,n,e,n,n,e,e" />
-                    <br />
-                    <label for="create_game_options">Options code: </label>
-                    <input id="create_game_options" type="text" value="" />
-                    <br />
-                    <button id="create_game_button">Create game</button>
-                </fieldset>
-                */
 };

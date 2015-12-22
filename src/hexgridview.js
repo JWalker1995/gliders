@@ -1,19 +1,26 @@
 var Config = require('./config.js');
 var Util = require('./util.js');
 
+var hex_pool = [];
+
 module.exports = function(container, game)
 {
     var _this = this;
 
-    var hex_pool = [];
-    var hex_pool_next = 0;
+    var els = [];
 
-    Util.add_callback(game, 'reset_cells_callback', function()
+    this.destruct = function()
+    {
+        hex_pool = hex_pool.concat(els);
+        els = [];
+    };
+
+    game.reset_cells_callback.add(function()
     {
         hex_pool_next = 0;
     });
 
-    Util.add_callback(game, 'add_cell_callback', function(loc, type)
+    game.add_cell_callback.add(function(loc, type)
     {
         if (hex_pool_next >= hex_pool.length)
         {
@@ -25,7 +32,7 @@ module.exports = function(container, game)
         hex_pool_next++;
     });
 
-    Util.add_callback(game, 'finalize_cells_callback', function()
+    game.finalize_cells_callback.add(function()
     {
         for (var i = hex_pool_next; i < hex_pool.length; i++)
         {

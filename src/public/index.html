@@ -2,12 +2,15 @@
 <html>
 <head>
     <script src="bundle.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
+    <div id="error_container"></div>
     <div class="right_column">
         <div id="welcome_container">
-            Welcome <span id="welcome_name" class="text_input" contenteditable="true">guest</span>
+            Welcome <span id="welcome_name" class="text_input" contenteditable="true"></span>
+            <i id="welcome_name_spinner" class="fa fa-refresh fa-spin hidden"></i>
         </div>
 
         <div id="connect_container">
