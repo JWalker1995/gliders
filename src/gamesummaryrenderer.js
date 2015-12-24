@@ -61,7 +61,7 @@ module.exports = function(remote, game)
         };
 
         // Debugging stuff to auto-join games
-        els.join.onclick();
+        // els.join.onclick();
     };
 
     this.get_el = function() {return el;};

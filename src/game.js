@@ -1,4 +1,5 @@
 var Config = require('./config.js');
+var Player = require('./player.js');
 var HexGrid = require('./hexgrid.js');
 var ClientError = require('./clienterror.js');
 var Util = require('./util.js');
@@ -334,8 +335,6 @@ module.exports = function(game_id)
     {
         if (!can_shoot) {return false;}
 
-        if (board[front_loc] !== _this.CELL_EMPTY) {return false;}
-
         var back_right = board[piece.loc + neighbor_offsets[dir + 2]];
         if (typeof back_right !== 'object' || back_right.player_id !== current_player) {return false;}
 
@@ -350,7 +349,7 @@ module.exports = function(game_id)
     var is_spawn_valid = function(piece, front_loc)
     {
         return false;
-        
+
         if (!piece.is_king) {return false;}
         if (turn_actions.length) {return false;}
         if (!player_spawns[current_player]) {return false;}
