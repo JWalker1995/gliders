@@ -5,6 +5,7 @@
 // In all cases, before clicking "end turn", you can undo your actions
 
 var Remote = require('./remote.js');
+var Player = require('./player.js');
 var Game = require('./game.js');
 var GameRenderer = require('./gamerenderer.js');
 var CreateGameRenderer = require('./creategamerenderer.js');
@@ -135,13 +136,16 @@ window.onload = function()
             renderer.show_game(playing_game);
             renderer.play_game(playing_game, data.player_id);
 
-            playing_game.end_turn_callback.add(function(actions)
+            playing_game.end_turn_callback.add(function(player_id, actions)
             {
-                remote.write({
-                    'q': 'turn',
-                    'game_id': data.game_id,
-                    'actions': actions,
-                });
+                if (player_id === data.player_id)
+                {
+                    remote.write({
+                        'q': 'turn',
+                        'game_id': data.game_id,
+                        'actions': actions,
+                    });
+                }
             });
 
             Util.add_class(els.games_container, 'hidden');
@@ -168,7 +172,7 @@ window.onload = function()
         var renderer = open_games[data.game_id];
         if (typeof renderer === 'undefined') {return;}
 
-        renderer.join_player(data.player_name);
+        renderer.join_player(Player.create(data.player_name));
     });
     remote.register_handler('leave_game_notif', function(data)
     {
@@ -176,6 +180,26 @@ window.onload = function()
         if (typeof renderer === 'undefined') {return;}
 
         renderer.remove_player(data.player_name);
+    });
+
+    remote.register_handler('turn', function(data)
+    {
+        if (data.game_id !== playing_game.get_game_id()) {return;}
+
+        var last_index = data.actions.length - 1;
+        data.actions.map(function(action, index)
+        {
+            setTimeout(function()
+            {
+                var piece = playing_game.get_board()[action.loc];
+                playing_game.do_action(piece, action);
+
+                if (index === last_index)
+                {
+                    playing_game.end_turn();
+                }
+            }, index * 500);
+        });
     });
 
     var show_game = function(el, game)

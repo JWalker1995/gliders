@@ -21,32 +21,39 @@ module.exports = function(els)
 
     var setup_piece_actions = function(el, piece)
     {
-        el.onclick = function()
+        if (piece.player_id === player_id)
         {
-            if (clicked_piece === piece)
+            el.onclick = function()
             {
-                clicked_piece = undefined;
-            }
-            else
+                if (clicked_piece === piece)
+                {
+                    clicked_piece = undefined;
+                }
+                else
+                {
+                    clicked_piece = piece;
+                }
+            };
+            el.onmouseover = function()
             {
-                clicked_piece = piece;
-            }
-        };
-        el.onmouseover = function()
+                if (!clicked_piece)
+                {
+                    hide_piece_actions();
+                    show_piece_actions(piece);
+                }
+            };
+            el.onmouseout = function()
+            {
+                if (!clicked_piece)
+                {
+                    hide_piece_actions();
+                }
+            };
+        }
+        else
         {
-            if (!clicked_piece)
-            {
-                hide_piece_actions();
-                show_piece_actions(piece);
-            }
-        };
-        el.onmouseout = function()
-        {
-            if (!clicked_piece)
-            {
-                hide_piece_actions();
-            }
-        };
+            el.style.pointerEvents = 'none';
+        }
 
         piece.el = el;
     };
@@ -80,7 +87,8 @@ module.exports = function(els)
 
     var update_end_turn_button = function()
     {
-        var method = playing_game.is_end_turn_valid() ? 'removeAttribute' : 'setAttribute';
+        var enabled = playing_game.turn_is(player_id) && playing_game.is_end_turn_valid();
+        var method = enabled ? 'removeAttribute' : 'setAttribute';
         els.end_turn[method]('disabled', 'disabled');
     };
 
@@ -143,7 +151,7 @@ module.exports = function(els)
         game.do_action_callback.add(function(piece, action)
         {
             update_end_turn_button();
-            
+
             var row = game.get_row(piece.loc);
             var col = game.get_col(piece.loc);
             grid.set_transform(piece.el, row, col);
@@ -154,10 +162,13 @@ module.exports = function(els)
 
         game.remove_piece_callback.add(function(piece)
         {
-            els.board.removeChild(piece.el);
+            setTimeout(function()
+            {
+                els.board.removeChild(piece.el);
+            }, 500);
         });
 
-        game.end_turn_callback.add(function(actions)
+        game.end_turn_callback.add(function(player_id, actions)
         {
             update_end_turn_button();
         });

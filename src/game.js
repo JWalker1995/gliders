@@ -12,7 +12,7 @@ module.exports = function(game_id)
     var formation_code;
     var options_code;
 
-    var player_names = [];
+    var players = [];
 
     var board;
     var pieces = [];
@@ -48,7 +48,7 @@ module.exports = function(game_id)
     this.end_turn_callback = new Callback();
 
     this.get_game_id = function() {return game_id;};
-    this.get_player_names = function() {return player_names;};
+    this.get_players = function() {return players;};
     this.get_num_players = function() {return num_players;};
 
     this.get_board_code = function() {return board_code;};
@@ -157,37 +157,37 @@ module.exports = function(game_id)
         player_spawns = Util.fill_array(num_players, opts.spawns);
     };
 
-    this.join_player = function(name)
+    this.join_player = function(player)
     {
-        if (player_names.indexOf(name) !== -1)
+        if (players.indexOf(player) !== -1)
         {
             throw new ClientError('You have already joined this game');
         }
 
-        var index = player_names.length;
+        var index = players.length;
         if (index >= num_players)
         {
-            throw new ClientError('Too slow, this game is already full');
+            throw new ClientError('This game is already full');
         }
 
-        player_names.push(name);
-        _this.change_player_callback.call(index, name);
+        players.push(player);
+        _this.change_player_callback.call(index, player);
 
-        return player_names.length === num_players;
+        return players.length === num_players;
     };
 
-    this.remove_player = function(name)
+    this.remove_player = function(player)
     {
-        var index = player_names.indexOf(name);
+        var index = players.indexOf(player);
         if (index === -1)
         {
             throw new ClientError('You are not in this game');
         }
 
-        player_names.splice(index, 1);
+        players.splice(index, 1);
         _this.change_player_callback.call(index, undefined);
 
-        return player_names.length === 0;
+        return players.length === 0;
     };
 
     this.serialize = function()
@@ -197,7 +197,7 @@ module.exports = function(game_id)
             'board': board_code,
             'formation': formation_code,
             'options': options_code,
-            'player_names': player_names,
+            'player_names': players.map(function(val) {return val.get_name();}),
         };
     };
     this.deserialize = function(obj)
@@ -206,7 +206,7 @@ module.exports = function(game_id)
         if (obj.board) {_this.update_board(obj.board);}
         if (obj.formation) {_this.update_formation(obj.formation);}
         if (obj.options) {_this.update_options(obj.options);}
-        if (obj.player_names) {player_names = obj.player_names;}
+        if (obj.player_names) {players = obj.player_names.map(function(name) {return Player.create(name);});}
     };
 
     this.get_piece = function(piece_id)
@@ -258,7 +258,7 @@ module.exports = function(game_id)
                     dist++;
                 }
 
-                if (typeof board[loc] === 'object' && board[loc].player_id !== current_player)
+                if (typeof board[dst_loc] === 'object' && board[dst_loc].player_id !== current_player)
                 {
                     // Hit an enemy piece
                     actions.push({
@@ -279,6 +279,11 @@ module.exports = function(game_id)
         }
 
         return actions;
+    };
+
+    this.turn_is = function(player_id)
+    {
+        return player_id === current_player;
     };
 
     this.is_action_valid = function(piece, action)
@@ -344,6 +349,8 @@ module.exports = function(game_id)
     };
     var is_spawn_valid = function(piece, front_loc)
     {
+        return false;
+        
         if (!piece.is_king) {return false;}
         if (turn_actions.length) {return false;}
         if (!player_spawns[current_player]) {return false;}
@@ -382,6 +389,11 @@ module.exports = function(game_id)
 
     this.do_action = function(piece, action)
     {
+        if (typeof piece !== 'object')
+        {
+            throw new ClientError('Invalid piece');
+        }
+
         if (!_this.is_action_valid(piece, action)) {return false;}
 
         if (action.type !== _this.ACTION_SHOOT) {can_shoot = false;}
@@ -393,6 +405,8 @@ module.exports = function(game_id)
         {
             throw new ClientError('Action destination is an edge cell');
         }
+
+        action.loc = piece.loc;
 
         if (board[dst_loc] !== _this.CELL_EMPTY)
         {
@@ -411,7 +425,6 @@ module.exports = function(game_id)
             board[piece.loc] = piece;
         }
 
-        action.loc = piece.loc;
         turn_actions.push(action);
         _this.do_action_callback.call(piece, action);
 
@@ -475,6 +488,8 @@ module.exports = function(game_id)
     {
         if (!_this.is_end_turn_valid()) {return false;}
 
+        var prev_player = current_player;
+
         do
         {
             turn++;
@@ -483,10 +498,10 @@ module.exports = function(game_id)
 
         can_shoot = true;
 
-        var actions = turn_actions;
+        var prev_actions = turn_actions;
         turn_actions = [];
 
-        _this.end_turn_callback.call(actions);
+        _this.end_turn_callback.call(prev_player, prev_actions);
     };
 
     this.get_row = function(loc)

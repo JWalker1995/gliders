@@ -22,17 +22,22 @@ var ServerApp = function()
 
     var online_names = {};
 
+    var games = [];
+
     var open_games = [];
     var open_games_subscribers = [];
 
     var running_games = [];
     var running_games_subscribers = [];
 
-    var write_each = function(subscribers, data)
+    var write_each = function(subscribers, data, except)
     {
         for (var i = 0; i < subscribers.length; i++)
         {
-            subscribers[i].write(data);
+            if (subscribers[i] !== except)
+            {
+                subscribers[i].write(data);
+            }
         }
     };
 
@@ -67,11 +72,10 @@ var ServerApp = function()
 
         for (var i = 0; i < open_games.length; i++)
         {
-            if (!open_games[i]) {continue;}
-
+            var game = games[open_games[i]];
             remote.write({
                 'q': 'open_games_push',
-                'game': open_games[i].serialize(),
+                'game': game.serialize(),
             });
         }
     };
@@ -85,8 +89,9 @@ var ServerApp = function()
     };
     this.create_game = function(data)
     {
-        var game = new Game(open_games.length);
-        open_games[game.get_game_id()] = game;
+        var game = new Game(games.length);
+        games[game.get_game_id()] = game;
+        open_games.push(game.get_game_id());
 
         game.deserialize(data);
 
@@ -99,13 +104,13 @@ var ServerApp = function()
     };
     this.join_game = function(game_id, remote)
     {
-        var game = open_games[game_id];
+        var game = games[game_id];
         if (typeof game !== 'object')
         {
             throw new ClientError('Game id does not exist');
         }
 
-        var full = game.join_player(remote.get_name());
+        var full = game.join_player(remote);
 
         write_each(open_games_subscribers, {
             'q': 'join_game_notif',
@@ -115,19 +120,26 @@ var ServerApp = function()
 
         if (full)
         {
-            open_games[game_id] = undefined;
+            var index = open_games.indexOf(game_id);
+            if (index !== -1)
+            {
+                open_games.splice(index, 1);
+            }
+
+            running_games.push(game);
+
             start_game(game);
         }
     };
     this.leave_game = function(game_id, remote)
     {
-        var game = open_games[game_id];
+        var game = games[game_id];
         if (typeof game !== 'object')
         {
             throw new ClientError('Game id does not exist');
         }
 
-        var empty = game.remove_player(remote.get_name());
+        var empty = game.remove_player(remote);
 
         write_each(open_games_subscribers, {
             'q': 'leave_game_notif',
@@ -137,8 +149,12 @@ var ServerApp = function()
 
         if (empty)
         {
-            open_games[game_id] = undefined;
-            
+            var index = open_games.indexOf(game_id);
+            if (index !== -1)
+            {
+                open_games.splice(index, 1);
+            }
+
             write_each(open_games_subscribers, {
                 'q': 'open_games_pop',
                 'game_id': game.get_game_id(),
@@ -153,16 +169,48 @@ var ServerApp = function()
             'game_id': game.get_game_id(),
             'player_id': undefined,
         };
-        var player_names = game.get_player_names();
 
         for (var i = 0; i < open_games_subscribers.length; i++)
         {
-            var name = open_games_subscribers[i].get_name();
-            var index = player_names.indexOf(name);
-            data.player_id = index === -1 ? undefined : index;
+            var index = game.get_players().indexOf(open_games_subscribers[i]);
+            if (index === -1)
+            {
+                data.player_id = undefined;
+            }
+            else
+            {
+                open_games_subscribers[i].leave_other_games(game.get_game_id());
+                data.player_id = index;
+            }
 
             open_games_subscribers[i].write(data);
         }
+    };
+
+    this.do_turn = function(game_id, actions, remote)
+    {
+        var game = games[game_id];
+        if (typeof game !== 'object')
+        {
+            throw new ClientError('Game id does not exist');
+        }
+
+        for (var i = 0; i < actions.length; i++)
+        {
+            var action = actions[i];
+            var piece = game.get_board()[action.loc];
+            if (!game.do_action(piece, action))
+            {
+                throw new ClientError('Invalid action ' + i);
+            }
+        }
+        game.end_turn();
+
+        write_each(game.get_players(), {
+            'q': 'turn',
+            'game_id': game_id,
+            'actions': actions,
+        }, remote);
     };
 
     var init = function()

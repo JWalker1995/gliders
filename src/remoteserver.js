@@ -28,6 +28,19 @@ module.exports = function(app, remote)
         in_games.push(data.game_id);
     };
 
+    remote.leave_other_games = function(except_game_id)
+    {
+        for (var i = 0; i < in_games.length; i++)
+        {
+            if (in_games[i] !== except_game_id)
+            {
+                app.leave_game(in_games[i], remote);
+            }
+        }
+
+        in_games = [except_game_id];
+    };
+
     remote.register_handler('set_name', function(data)
     {
         if (!name_locked)
@@ -70,6 +83,16 @@ module.exports = function(app, remote)
     });
 
     remote.register_handler('join_game', join_game);
+
+    remote.register_handler('turn', function(data)
+    {
+        if (in_games.indexOf(data.game_id) === -1)
+        {
+            throw new ClientError('You are not in that game');
+        }
+
+        app.do_turn(data.game_id, data.actions, remote);
+    });
 
     remote.register_handler('__CLOSE__', function()
     {

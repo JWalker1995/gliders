@@ -41,12 +41,12 @@ module.exports = function(remote, game)
             'timer': el.getElementsByClassName('open_game_timer')[0],
         };
 
-        var players = game.get_player_names();
+        var players = game.get_players();
         for (var i = 0; i < players.length; i++)
         {
-            if (typeof players[i] === 'string')
+            if (typeof players[i] !== 'undefined')
             {
-                els.players_list.childNodes[i].innerText = players[i];
+                els.players_list.childNodes[i].innerText = players[i].get_name();
             }
         }
 
@@ -67,20 +67,20 @@ module.exports = function(remote, game)
     this.get_el = function() {return el;};
     this.get_game = function() {return game;};
 
-    this.join_player = function(player_name)
+    this.join_player = function(player)
     {
-        var players = game.get_player_names();
+        var players = game.get_players();
         var index = players.indexOf(undefined);
         if (index === -1) {index = players.length;}
 
-        players[index] = player_name;
-        els.players_list.childNodes[index].innerText = player_name;
+        players[index] = player;
+        els.players_list.childNodes[index].innerText = player.get_name();
     };
 
-    this.remove_player = function(player_name)
+    this.remove_player = function(player)
     {
-        var players = game.get_player_names();
-        var index = players.indexOf(player_name);
+        var players = game.get_players();
+        var index = players.indexOf(player);
         if (index !== -1)
         {
             players[index] = undefined;
