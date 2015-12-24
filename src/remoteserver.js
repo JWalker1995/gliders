@@ -71,7 +71,7 @@ module.exports = function(app, remote)
 
     remote.register_handler('join_game', join_game);
 
-    remote.get_spark().on('end', function()
+    remote.register_handler('__CLOSE__', function()
     {
         app.unsubscribe_open_games(remote);
 

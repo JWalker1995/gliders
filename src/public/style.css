@@ -101,15 +101,19 @@ html, body {
     text-align: center;
 }
 
-#games_list .open_game {
+#games_list .open_game, #create_game, #create_game legend {
     background-color: #EEE;
-    position: relative;
-    cursor: default;
     -webkit-transition: background-color 0.3s;
     transition: background-color 0.3s;
 }
-#games_list .open_game:hover {
+#games_list .open_game.showing, #create_game.showing, #create_game.showing legend {
     background-color: #ADF;
+}
+
+#games_list .open_game {
+    position: relative;
+    cursor: default;
+    margin-bottom: 8px;
 }
 
 /* Generated with http://cssarrowplease.com */
@@ -175,4 +179,8 @@ html, body {
 }
 #games_list .open_game.expanded .open_game_details {
     display: block;
+}
+
+#create_game {
+    border: none;
 }

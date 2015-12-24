@@ -22,43 +22,46 @@ module.exports = function(app, spark)
                 var obj = data[i];
                 if (typeof obj === 'object')
                 {
-                    var handler = handlers[obj.q];
-                    if (typeof handler === 'function')
-                    {
-                        try
-                        {
-                            handler(obj);
-                        }
-                        catch (e)
-                        {
-                            handle_error(e);
-                        }
-                    }
+                    recv_obj(obj);
                 }
             }
         }
     });
-    var handle_error = function(error)
+    spark.on('end', function()
     {
-        if (error instanceof ClientError)
-        {
-            _this.write({
-                'q': 'error',
-                'msg': error.get_message(),
-            });
+        recv_obj({'q': '__CLOSE__'});
+    });
+    var recv_obj = function(obj)
+    {
+        var handler = handlers[obj.q];
+        if (typeof handler !== 'function') {return;}
 
-            var code = error.get_code();
-            if (code)
+        try
+        {
+            handler(obj);
+        }
+        catch (error)
+        {
+            if (error instanceof ClientError)
             {
                 _this.write({
-                    'q': 'error_' + code,
-                    'data': error.get_data(),
+                    'q': 'error',
+                    'msg': error.get_message(),
                 });
+
+                var code = error.get_code();
+                if (code)
+                {
+                    _this.write({
+                        'q': 'error_' + code,
+                        'data': error.get_data(),
+                    });
+                }
             }
-        }
-        else
-        {
-            throw error;
+            else
+            {
+                throw error;
+            }
         }
     };
 

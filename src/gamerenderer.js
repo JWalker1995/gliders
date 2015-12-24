@@ -49,20 +49,19 @@ module.exports = function(els)
         };
 
         piece.el = el;
-        els.board.appendChild(el);
     };
 
     var show_piece_actions = function(piece)
     {
         if (piece.player_id !== player_id) {return;}
 
-        var actions = game.get_piece_actions(piece);
+        var actions = playing_game.get_piece_actions(piece);
 
         for (var i = 0; i < actions.length; i++)
         {
-            var el = cell_els[game.get_action_location(piece, actions[i])];
+            var el = cell_els[playing_game.get_action_location(piece, actions[i])];
             el.style.fill = Config.cell_action_fill;
-            el.onclick = game.do_action.bind(null, piece, actions[i]);
+            el.onclick = playing_game.do_action.bind(null, piece, actions[i]);
 
             shown_actions.push(el);
         }
@@ -144,8 +143,10 @@ module.exports = function(els)
         game.do_action_callback.add(function(piece, action)
         {
             update_end_turn_button();
-
-            grid.set_transform(piece.el, piece.loc);
+            
+            var row = game.get_row(piece.loc);
+            var col = game.get_col(piece.loc);
+            grid.set_transform(piece.el, row, col);
 
             clicked_piece = undefined;
             hide_piece_actions();

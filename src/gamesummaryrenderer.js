@@ -59,6 +59,9 @@ module.exports = function(remote, game)
                 'game_id': game.get_game_id(),
             });
         };
+
+        // Debugging stuff to auto-join games
+        els.join.onclick();
     };
 
     this.get_el = function() {return el;};

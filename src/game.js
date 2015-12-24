@@ -214,7 +214,7 @@ module.exports = function(game_id)
         var piece = pieces[piece_id];
         if (typeof piece === 'undefined')
         {
-            console.error('Piece with id ' + piece_id + ' does not exist.');
+            throw new ClientError('Piece with id ' + piece_id + ' does not exist.');
         }
         return piece;
     };
@@ -236,24 +236,44 @@ module.exports = function(game_id)
             {
                 actions.push({
                     'type': _this.ACTION_MOVE,
-                    'dir': j
+                    'dir': j,
                 });
             }
 
             // Check if this piece can be shot from a glider
             if (is_shoot_valid(piece, front_loc, j))
             {
-                actions.push({
-                    'type': _this.ACTION_SHOOT,
-                    'dir': j
-                });
+                var dst_loc = front_loc;
+                var dist = 1;
+
+                while (board[dst_loc] === this.CELL_EMPTY)
+                {
+                    actions.push({
+                        'type': _this.ACTION_SHOOT,
+                        'dir': j,
+                        'dist': dist,
+                    });
+
+                    dst_loc += dir;
+                    dist++;
+                }
+
+                if (typeof board[loc] === 'object' && board[loc].player_id !== current_player)
+                {
+                    // Hit an enemy piece
+                    actions.push({
+                        'type': _this.ACTION_SHOOT,
+                        'dir': j,
+                        'dist': dist,
+                    });
+                }
             }
 
             if (is_spawn_valid(piece, front_loc))
             {
                 actions.push({
                     'type': _this.ACTION_SPAWN,
-                    'dir': j
+                    'dir': j,
                 });
             }
         }
@@ -265,8 +285,7 @@ module.exports = function(game_id)
     {
         if (action.dir < 0 || action.dir >= 6)
         {
-            console.error('Unexpected action.dir: ' + action.dir);
-            return false;
+            throw new ClientError('Unexpected action.dir: ' + action.dir);
         }
 
         if (piece.player_id !== current_player) {return false;}
@@ -344,12 +363,14 @@ module.exports = function(game_id)
         {
             var loc = piece.loc;
             var dir_offset = neighbor_offsets[action.dir];
+            var i = 0;
 
             do {
                 loc += dir_offset;
-            } while (board[loc] === this.CELL_EMPTY);
+                i++;
+            } while (i < action.dist && board[loc] === this.CELL_EMPTY);
 
-            if (typeof board[loc] !== 'object' || board[loc].player_id === current_player)
+            if (board[loc] !== _this.CELL_EMPTY && (typeof board[loc] !== 'object' || board[loc].player_id === current_player))
             {
                 // Hit the edge or our own piece
                 loc -= dir_offset;
@@ -370,8 +391,7 @@ module.exports = function(game_id)
 
         if (board[dst_loc] === _this.CELL_EDGE)
         {
-            console.error('Action destination is an edge cell');
-            return false;
+            throw new ClientError('Action destination is an edge cell');
         }
 
         if (board[dst_loc] !== _this.CELL_EMPTY)
@@ -391,6 +411,7 @@ module.exports = function(game_id)
             board[piece.loc] = piece;
         }
 
+        action.loc = piece.loc;
         turn_actions.push(action);
         _this.do_action_callback.call(piece, action);
 
@@ -401,13 +422,11 @@ module.exports = function(game_id)
     {
         if (board[loc] === _this.CELL_EDGE)
         {
-            console.error('Make piece location is an edge cell');
-            return;
+            throw new ClientError('Make piece location is an edge cell');
         }
         if (board[loc] !== _this.CELL_EMPTY)
         {
-            console.error('Make piece location is already occupied');
-            return;
+            throw new ClientError('Make piece location is already occupied');
         }
 
         var piece = {

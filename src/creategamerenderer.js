@@ -1,5 +1,6 @@
 var Config = require('./config.js');
 var Util = require('./util.js');
+var Callback = require('./callback.js');
 
 module.exports = function(remote, game, renderer)
 {
@@ -12,48 +13,50 @@ module.exports = function(remote, game, renderer)
     var el;
     var els;
 
+    this.show_setup_callback = new Callback();
+
     var init = function()
     {
         var html = '';
-        html += '<div class="publish_game_details">';
-            html += '<span class="text_input_label">Board code: </span>';
-            html += '<span class="publish_game_board text_input"' + (true ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_board_code()) + '</span>';
-            html += '<br />';
-            html += '<span class="text_input_label">Formation code: </span>';
-            html += '<span class="publish_game_formation text_input"' + (true ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_formation_code()) + '</span>';
-            html += '<br />';
-            html += '<span class="text_input_label">Options code: </span>';
-            html += '<span class="publish_game_options text_input"' + (true ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_options_code()) + '</span>';
-            html += '<br />';
-            html += '<span class="publish_game_publish button">Publish</span>';
-        html += '</div>';
+        html += '<span class="text_input_label">Board code: </span>';
+        html += '<span class="create_game_board text_input"' + (true ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_board_code()) + '</span>';
+        html += '<br />';
+        html += '<span class="text_input_label">Formation code: </span>';
+        html += '<span class="create_game_formation text_input"' + (true ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_formation_code()) + '</span>';
+        html += '<br />';
+        html += '<span class="text_input_label">Options code: </span>';
+        html += '<span class="create_game_options text_input"' + (true ? ' contenteditable="true"' : '') + '>' + Util.escape_text(game.get_options_code()) + '</span>';
+        html += '<br />';
+        html += '<span class="create_game_publish button">Publish</span>';
 
         el = document.createElement('div');
-        Util.add_class(el, 'publish_game');
+        Util.add_class(el, 'create_game_details');
         el.innerHTML = html;
 
         els = {
-            'board': el.getElementsByClassName('publish_game_board')[0],
-            'formation': el.getElementsByClassName('publish_game_formation')[0],
-            'options': el.getElementsByClassName('publish_game_options')[0],
-            'publish': el.getElementsByClassName('publish_game_publish')[0],
+            'board': el.getElementsByClassName('create_game_board')[0],
+            'formation': el.getElementsByClassName('create_game_formation')[0],
+            'options': el.getElementsByClassName('create_game_options')[0],
+            'publish': el.getElementsByClassName('create_game_publish')[0],
         };
 
         els.board.onkeyup = function()
         {
             game.update_board(els.board.innerText);
-            renderer.set_game(game);
+            renderer.show_game(game);
         };
         els.formation.onkeyup = function()
         {
             game.update_formation(els.formation.innerText);
-            renderer.set_game(game);
+            renderer.show_game(game);
         };
         els.options.onkeyup = function()
         {
             game.update_options(els.options.innerText);
-            renderer.set_game(game);
+            renderer.show_game(game);
         };
+
+        el.onmouseover = _this.show_setup_callback.call;
 
         els.publish.onclick = function()
         {
@@ -87,10 +90,10 @@ module.exports = function(remote, game, renderer)
             {
                 var el = els[key];
                 el.innerText = game[key] = new_game[key];
-                Util.add_class(el, 'publish_game_changed');
+                Util.add_class(el, 'create_game_changed');
                 setTimeout(function()
                 {
-                    Util.remove_class(el, 'publish_game_changed');
+                    Util.remove_class(el, 'create_game_changed');
                 }, 1000);
             }
         };

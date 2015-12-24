@@ -27,7 +27,7 @@ window.onload = function()
         'error_container': document.getElementById('error_container'),
 
         'welcome_container': document.getElementById('welcome_container'),
-        'connect_container': document.getElementById('connect_container'),
+        'games_container': document.getElementById('games_container'),
         'controls_container': document.getElementById('controls_container'),
         'board_container': document.getElementById('board_container'),
 
@@ -38,6 +38,7 @@ window.onload = function()
         // Connect container
         'games_list': document.getElementById('games_list'),
         'create_game': document.getElementById('create_game'),
+        'playing_list': document.getElementById('playing_list'),
 
         // Controls container
         'end_turn': document.getElementById('control_end_turn'),
@@ -46,23 +47,33 @@ window.onload = function()
         'board': document.getElementById('board'),
     };
 
-    game = new Game(undefined);
-    game.code_warning_callback.add(function(msg)
+    create_game = new Game(undefined);
+    create_game.code_warning_callback.add(function(msg)
     {
         console.warn(msg);
     });
-    game.update_board('5');
-    game.update_formation('5 3 e e e e e e n e e e n e e n n n e e n e k e e e n e n n e n n e e');
-    game.update_options('spawns=2');
+    create_game.update_board('5');
+    create_game.update_formation('5 3 e e e e e e n e e e n e e n n n e e n e k e e e n e n n e n n e e');
+    create_game.update_options('spawns=2');
 
     renderer = new GameRenderer(els);
-    renderer.show_game(game);
+    renderer.show_game(create_game);
 
-    var create_renderer = new CreateGameRenderer(remote, game, renderer);
+    var create_renderer = new CreateGameRenderer(remote, create_game, renderer);
     els.create_game.appendChild(create_renderer.get_el());
+
+    create_renderer.show_setup_callback.add(function()
+    {
+        show_game(els.create_game, create_game);
+    });
 
     var cur_name;
     var open_games = [];
+
+    var showing_el = els.create_game;
+    Util.add_class(showing_el, 'showing');
+
+    var playing_game;
 
     els.welcome_name.onblur = function()
     {
@@ -80,35 +91,6 @@ window.onload = function()
             'name': this.innerText,
         });
     };
-
-    /*
-    els.create_game_preset.onchange = function()
-    {
-        if (!this.value) {return;}
-        var parts = this.value.split('/');
-        els.create_game_board.value = parts[0] || '';
-        els.create_game_formation.value = parts[1] || '';
-        els.create_game_options.value = parts[2] || '';
-    };
-
-    els.create_game_board.onkeyup = els.create_game_formation.onkeyup = function()
-    {
-        game.update_board(els.create_game_board.value);
-        game.update_formation(els.create_game_formation.value);
-    };
-
-    els.create_game_button.onclick = function()
-    {
-        remote.write({
-            'q': 'create_game',
-            'game': {
-                'board': els.create_game_board.value,
-                'formation': els.create_game_formation.value,
-                'options': els.create_game_options.value,
-            },
-        });
-    };
-    */
 
     remote.register_handler('error', function(data)
     {
@@ -149,9 +131,20 @@ window.onload = function()
 
         if (typeof data.player_id === 'number')
         {
-            game = summary_renderer.get_game();
-            renderer.show_game(game);
-            renderer.play_game(game, data.player_id);
+            playing_game = summary_renderer.get_game();
+            renderer.show_game(playing_game);
+            renderer.play_game(playing_game, data.player_id);
+
+            playing_game.end_turn_callback.add(function(actions)
+            {
+                remote.write({
+                    'q': 'turn',
+                    'game_id': data.game_id,
+                    'actions': actions,
+                });
+            });
+
+            Util.add_class(els.games_container, 'hidden');
         }
     });
 
@@ -163,7 +156,7 @@ window.onload = function()
         var summary_renderer = new GameSummaryRenderer(remote, open_game);
         summary_renderer.show_setup_callback.add(function()
         {
-            renderer.show_game(open_game);
+            show_game(summary_renderer.get_el(), open_game);
         });
 
         els.games_list.appendChild(summary_renderer.get_el());
@@ -184,4 +177,12 @@ window.onload = function()
 
         renderer.remove_player(data.player_name);
     });
+
+    var show_game = function(el, game)
+    {
+        Util.remove_class(showing_el, 'showing');
+        showing_el = el;
+        Util.add_class(showing_el, 'showing');
+        renderer.show_game(game);
+    };
 };
