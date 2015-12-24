@@ -1,7 +1,7 @@
 var Config = require('./config.js');
 var Util = require('./util.js');
 
-module.exports = function(remote, game)
+module.exports = function(remote, game, renderer)
 {
     // Formations:
     // 5/5 3 e e e e e e n e e e n e e n n n e e n e k e e e n e n n e n n e e
@@ -42,14 +42,17 @@ module.exports = function(remote, game)
         els.board.onkeyup = function()
         {
             game.update_board(els.board.innerText);
+            renderer.set_game(game);
         };
         els.formation.onkeyup = function()
         {
             game.update_formation(els.formation.innerText);
+            renderer.set_game(game);
         };
         els.options.onkeyup = function()
         {
             game.update_options(els.options.innerText);
+            renderer.set_game(game);
         };
 
         els.publish.onclick = function()

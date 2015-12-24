@@ -12,12 +12,11 @@ module.exports = function(game_id)
     var formation_code;
     var options_code;
 
-    var opts = JSON.parse(JSON.stringify(Config.default_opts));
-
     var player_names = [];
 
     var board;
     var pieces = [];
+    var opts = JSON.parse(JSON.stringify(Config.default_opts));
 
     var num_players;
     var players_dead;
@@ -40,10 +39,6 @@ module.exports = function(game_id)
     this.ACTION_SHOOT = 2;
     this.ACTION_SPAWN = 3;
 
-    this.reset_cells_callback = new Callback();
-    this.add_cell_callback = new Callback();
-    this.finalize_cells_callback = new Callback();
-
     this.change_player_callback = new Callback();
     this.add_piece_callback = new Callback();
     this.code_warning_callback = new Callback();
@@ -55,9 +50,14 @@ module.exports = function(game_id)
     this.get_game_id = function() {return game_id;};
     this.get_player_names = function() {return player_names;};
     this.get_num_players = function() {return num_players;};
+
     this.get_board_code = function() {return board_code;};
     this.get_formation_code = function() {return formation_code;};
     this.get_options_code = function() {return options_code;};
+
+    this.get_board = function() {return board;};
+    this.get_pieces = function() {return pieces;};
+    this.get_options = function() {return options;};
 
     this.update_board = function(code)
     {
@@ -90,12 +90,9 @@ module.exports = function(game_id)
 
             var loc = _this.get_loc(x, y);
             board[loc] = type;
-            _this.add_cell_callback.call(loc, type);
         };
 
-        _this.reset_cells_callback.call();
-        HexGrid.str_to_grid(code, meta_callback, add_cell, _this.code_warning_callback);
-        _this.finalize_cells_callback.call();
+        HexGrid.str_to_grid(code, meta_callback, add_cell, _this.code_warning_callback.call);
 
         pieces = [];
     };
@@ -134,15 +131,14 @@ module.exports = function(game_id)
                     return;
                 }
 
-                var piece = make_piece(sector, loc, type === 'k');
-                _this.add_piece_callback.call(piece);
+                make_piece(sector, loc, type === 'k');
             }
             else if (type !== 'e' && type)
             {
                 _this.code_warning_callback.call('Invalid type code "' + type + '"');
             }
         };
-        HexGrid.str_to_grid(code, meta_callback, add_piece, _this.code_warning_callback);
+        HexGrid.str_to_grid(code, meta_callback, add_piece, _this.code_warning_callback.call);
     };
 
     this.update_options = function(code)
@@ -185,13 +181,13 @@ module.exports = function(game_id)
         var index = player_names.indexOf(name);
         if (index === -1)
         {
-            return false;
+            throw new ClientError('You are not in this game');
         }
-        else
-        {
-            player_names.splice(index, 1);
-            _this.change_player_callback.call(index, undefined);
-        }
+
+        player_names.splice(index, 1);
+        _this.change_player_callback.call(index, undefined);
+
+        return player_names.length === 0;
     };
 
     this.serialize = function()

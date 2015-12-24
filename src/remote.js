@@ -89,5 +89,6 @@ module.exports = function(app, spark)
     {
         new RemoteClient(this);
     }
+
     console.log('new');
 };

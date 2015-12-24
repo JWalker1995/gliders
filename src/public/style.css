@@ -83,7 +83,7 @@ html, body {
     height: 100%;
 }
 
-#board circle {
+#board.playing circle {
     -webkit-transition: -webkit-transform 0.5s ease-in;
     -moz-transition: -moz-transform 0.5s ease-in;
     -o-transition: -o-transform 0.5s ease-in;

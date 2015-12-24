@@ -74,5 +74,16 @@ module.exports = function(remote, game)
         els.players_list.childNodes[index].innerText = player_name;
     };
 
+    this.remove_player = function(player_name)
+    {
+        var players = game.get_player_names();
+        var index = players.indexOf(player_name);
+        if (index !== -1)
+        {
+            players[index] = undefined;
+            els.players_list.childNodes[index].innerText = '?';
+        }
+    };
+
     init();
 };

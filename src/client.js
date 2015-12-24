@@ -47,13 +47,18 @@ window.onload = function()
     };
 
     game = new Game(undefined);
-    renderer = new GameRenderer(game, els);
-
+    game.code_warning_callback.add(function(msg)
+    {
+        console.warn(msg);
+    });
     game.update_board('5');
     game.update_formation('5 3 e e e e e e n e e e n e e n n n e e n e k e e e n e n n e n n e e');
     game.update_options('spawns=2');
 
-    var create_renderer = new CreateGameRenderer(remote, game);
+    renderer = new GameRenderer(els);
+    renderer.show_game(game);
+
+    var create_renderer = new CreateGameRenderer(remote, game, renderer);
     els.create_game.appendChild(create_renderer.get_el());
 
     var cur_name;
@@ -134,7 +139,7 @@ window.onload = function()
         Util.add_class(els.welcome_name_spinner, 'hidden');
     });
 
-    remote.register_handler('start_game', function(data)
+    remote.register_handler('open_games_pop', function(data)
     {
         var summary_renderer = open_games[data.game_id];
         if (typeof summary_renderer === 'undefined') {return;}
@@ -142,11 +147,12 @@ window.onload = function()
         els.games_list.removeChild(summary_renderer.get_el());
         open_games[data.game_id] = undefined;
 
-        var open_game = summary_renderer.get_game();
-
-        game.update_board(open_game.get_board_code());
-        game.update_formation(open_game.get_formation_code());
-        game.update_options(open_game.get_options_code());
+        if (typeof data.player_id === 'number')
+        {
+            game = summary_renderer.get_game();
+            renderer.show_game(game);
+            renderer.play_game(game, data.player_id);
+        }
     });
 
     remote.register_handler('open_games_push', function(data)
@@ -157,9 +163,7 @@ window.onload = function()
         var summary_renderer = new GameSummaryRenderer(remote, open_game);
         summary_renderer.show_setup_callback.add(function()
         {
-            game.update_board(open_game.get_board_code());
-            game.update_formation(open_game.get_formation_code());
-            game.update_options(open_game.get_options_code());
+            renderer.show_game(open_game);
         });
 
         els.games_list.appendChild(summary_renderer.get_el());
@@ -172,5 +176,12 @@ window.onload = function()
         if (typeof renderer === 'undefined') {return;}
 
         renderer.join_player(data.player_name);
+    });
+    remote.register_handler('leave_game_notif', function(data)
+    {
+        var renderer = open_games[data.game_id];
+        if (typeof renderer === 'undefined') {return;}
+
+        renderer.remove_player(data.player_name);
     });
 };

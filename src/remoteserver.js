@@ -25,6 +25,7 @@ module.exports = function(app, remote)
         name_locked = true;
 
         app.join_game(data.game_id, remote);
+        in_games.push(data.game_id);
     };
 
     remote.register_handler('set_name', function(data)
@@ -73,6 +74,11 @@ module.exports = function(app, remote)
     remote.get_spark().on('end', function()
     {
         app.unsubscribe_open_games(remote);
+
+        for (var i = 0; i < in_games.length; i++)
+        {
+            app.leave_game(in_games[i], remote);
+        }
     });
 
     init();

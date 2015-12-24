@@ -10,6 +10,7 @@ var fs = require('fs');
 var Config = require('./config.js');
 var Remote = require('./remote.js');
 var Game = require('./game.js');
+var ClientError = require('./clienterror.js');
 
 var ServerApp = function()
 {
@@ -67,7 +68,7 @@ var ServerApp = function()
         for (var i = 0; i < open_games.length; i++)
         {
             if (!open_games[i]) {continue;}
-            
+
             remote.write({
                 'q': 'open_games_push',
                 'game': open_games[i].serialize(),
@@ -101,7 +102,7 @@ var ServerApp = function()
         var game = open_games[game_id];
         if (typeof game !== 'object')
         {
-            throw new Error('Game id does not exist');
+            throw new ClientError('Game id does not exist');
         }
 
         var full = game.join_player(remote.get_name());
@@ -118,13 +119,50 @@ var ServerApp = function()
             start_game(game);
         }
     };
+    this.leave_game = function(game_id, remote)
+    {
+        var game = open_games[game_id];
+        if (typeof game !== 'object')
+        {
+            throw new ClientError('Game id does not exist');
+        }
+
+        var empty = game.remove_player(remote.get_name());
+
+        write_each(open_games_subscribers, {
+            'q': 'leave_game_notif',
+            'game_id': game_id,
+            'player_name': remote.get_name(),
+        });
+
+        if (empty)
+        {
+            open_games[game_id] = undefined;
+            
+            write_each(open_games_subscribers, {
+                'q': 'open_games_pop',
+                'game_id': game.get_game_id(),
+            });
+        }
+    };
 
     var start_game = function(game)
     {
-        write_each(open_games_subscribers, {
-            'q': 'start_game',
+        var data = {
+            'q': 'open_games_pop',
             'game_id': game.get_game_id(),
-        });
+            'player_id': undefined,
+        };
+        var player_names = game.get_player_names();
+
+        for (var i = 0; i < open_games_subscribers.length; i++)
+        {
+            var name = open_games_subscribers[i].get_name();
+            var index = player_names.indexOf(name);
+            data.player_id = index === -1 ? undefined : index;
+
+            open_games_subscribers[i].write(data);
+        }
     };
 
     var init = function()
@@ -152,7 +190,7 @@ var ServerApp = function()
 
         // Setup routes
         app.get('/bundle.js', send_script);
-        app.use(express.static('public'));
+        app.use(express.static(__dirname + '/public'));
 
         // Start listening
         var server = app.listen(get_port(), get_ip_address(), function()
@@ -187,7 +225,7 @@ var ServerApp = function()
         script = Config.uncompiled_script;
 
         var b = browserify();
-        b.add('./client.js');
+        b.add(__dirname + '/client.js');
         var res = b.bundle(function(err, buffer)
         {
             if (err)
