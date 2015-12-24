@@ -2,7 +2,7 @@
   "name": "gliders",
   "version": "1.0.0",
   "description": "Multiplayer strategy board game",
-  "main": "server.js",
+  "main": "src/server.js",
   "dependencies": {
     "browserify": "^12.0.1",
     "express": "^4.13.3",
@@ -11,7 +11,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js"
   },
   "repository": {
     "type": "git",
