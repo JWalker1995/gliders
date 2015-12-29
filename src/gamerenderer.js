@@ -11,6 +11,7 @@ module.exports = function(els)
     var cell_els;
     var piece_els;
 
+    var showing_piece;
     var shown_actions = [];
     var clicked_piece;
     var player_id;
@@ -63,11 +64,15 @@ module.exports = function(els)
         if (piece.player_id !== player_id) {return;}
 
         var actions = playing_game.get_piece_actions(piece);
+        if (!actions.length) {return;}
+
+        showing_piece = piece;
+        Util.add_class(showing_piece.el, 'selected');
 
         for (var i = 0; i < actions.length; i++)
         {
             var el = cell_els[playing_game.get_action_location(piece, actions[i])];
-            el.style.fill = Config.cell_action_fill;
+            Util.add_class(el, 'action');
             el.onclick = playing_game.do_action.bind(null, piece, actions[i]);
 
             shown_actions.push(el);
@@ -76,20 +81,25 @@ module.exports = function(els)
 
     var hide_piece_actions = function()
     {
+        if (showing_piece)
+        {
+            Util.remove_class(showing_piece.el, 'selected');
+        }
+
         for (var i = 0; i < shown_actions.length; i++)
         {
             var el = shown_actions[i];
-            el.style.fill = Config.cell_fill;
+            Util.remove_class(el, 'action');
             el.onclick = undefined;
         }
+
         shown_actions = [];
     };
 
     var update_end_turn_button = function()
     {
         var enabled = playing_game.turn_is(player_id) && playing_game.is_end_turn_valid();
-        var method = enabled ? 'removeAttribute' : 'setAttribute';
-        els.end_turn[method]('disabled', 'disabled');
+        Util.toggle_class(els.end_turn, 'disabled', !enabled);
     };
 
     this.show_game = function(game)

@@ -45,17 +45,23 @@ var Util = module.exports = {
             el.setAttribute('class', old_classes.join(' ').trim());
         }
     },
-    'toggle_class': function(el, c)
+    'toggle_class': function(el, c, set)
     {
         var old_classes = Util.get_classes(el);
         var index = old_classes.indexOf(c);
         if (index === -1)
         {
-            old_classes.push(c);
+            if (set !== false)
+            {
+                old_classes.push(c);
+            }
         }
         else
         {
-            old_classes.splice(index, 1);
+            if (set !== true)
+            {
+                old_classes.splice(index, 1);
+            }
         }
         el.setAttribute('class', old_classes.join(' ').trim());
     },

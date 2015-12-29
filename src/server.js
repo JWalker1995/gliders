@@ -30,6 +30,8 @@ var ServerApp = function()
     var running_games = [];
     var running_games_subscribers = [];
 
+    var game_keys = {};
+
     var write_each = function(subscribers, data, except)
     {
         for (var i = 0; i < subscribers.length; i++)
@@ -45,7 +47,7 @@ var ServerApp = function()
     {
         while (true)
         {
-            var name = 'guest_' + (Math.random() + '').substr(2, 5);
+            var name = 'guest_' + Math.random().toString().substr(2, 5);
             if (this.use_name(name)) {return name;}
         }
     };
@@ -64,6 +66,18 @@ var ServerApp = function()
     this.free_name = function(name)
     {
         online_names[name] = undefined;
+    };
+
+    this.get_game = function(data)
+    {
+        if (typeof data.game_id === 'number')
+        {
+            var game = games[game_id];
+            if (typeof game !== 'object')
+            {
+                throw new ClientError('Game id does not exist');
+            }
+        }
     };
 
     this.subscribe_open_games = function(remote)
@@ -164,10 +178,14 @@ var ServerApp = function()
 
     var start_game = function(game)
     {
+        var key = Math.random().toString().substr(2);
+        game_keys[key] = game;
+
         var data = {
             'q': 'open_games_pop',
             'game_id': game.get_game_id(),
             'player_id': undefined,
+            'key': key,
         };
 
         for (var i = 0; i < open_games_subscribers.length; i++)

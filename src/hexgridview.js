@@ -65,27 +65,17 @@ module.exports = function(container)
     var make_cell = function()
     {
         var el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        Util.add_class(el, 'cell');
         el.setAttribute('points', get_hex_pts().join(' '));
-        el.style.fill = Config.cell_fill;
-        el.style.stroke = Config.cell_stroke;
-        el.style.strokeWidth = Config.stroke_width;
         container.insertBefore(el, container.firstChild);
         return el;
-
-        /*
-        var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.appendChild(document.createTextNode(loc));
-        _this.set_position(text, loc);
-        container.appendChild(text);
-        */
     };
 
     var make_piece = function()
     {
         var el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        Util.add_class(el, 'piece');
         el.setAttribute('r', Config.piece_rad);
-        el.style.stroke = Config.piece_stroke;
-        el.style.strokeWidth = Config.stroke_width;
         container.appendChild(el);
         return el;
     };
