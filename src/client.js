@@ -95,6 +95,7 @@ window.onload = function()
 
     window.onhashchange = function()
     {
+        /*
         var key = window.location.hash.substr(1);
         if (!key) {return;}
 
@@ -102,6 +103,7 @@ window.onload = function()
             'q': 'join_game',
             'key': key,
         });
+        */
     };
 
     remote.register_handler('error', function(data)

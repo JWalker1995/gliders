@@ -178,7 +178,7 @@ var ServerApp = function()
 
     var start_game = function(game)
     {
-        var key = Math.random().toString().substr(2);
+        var key = Math.random().toString().substr(2, 8);
         game_keys[key] = game;
 
         var data = {
