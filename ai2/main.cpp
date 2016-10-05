@@ -11,7 +11,7 @@ Killer move
 Quiescence search
 */
 
-typedef MiniMax<4> Algorithm;
+typedef MiniMax<4, true> Algorithm;
 
 template <unsigned int times>
 void dilate(Algorithm::SizedBitBoard &bit_board) {
@@ -25,7 +25,8 @@ void dilate(Algorithm::SizedBitBoard &bit_board) {
 int main(int argc, char **argv) {
     Algorithm::Board board;
 
-    board.kings = {Algorithm::lookup_cell_id(8, 2), Algorithm::lookup_cell_id(1, 6)};
+    board.kings = {Algorithm::lookup_cell_id(8, 2), Algorithm::lookup_cell_id(1, 7)};
+    board.spawns = {2, 2};
 
     board.teammates = Algorithm::SizedBitBoard::from_bits(
                 board.kings[0],
@@ -41,11 +42,12 @@ int main(int argc, char **argv) {
     dilate<4>(board.empties);
     board.empties &= ~board.pieces;
 
-    std::cout << board.to_string<false>() << std::endl;
+    std::cout << board.to_string() << std::endl;
 
-    Algorithm alg;
+    Algorithm alg(3);
     signed int score = alg.calc_score(board);
     std::cout << score << std::endl;
+    std::cout << alg.to_string() << std::endl;
 
     return 0;
 }

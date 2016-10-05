@@ -15,6 +15,7 @@ public:
     static constexpr bool can_spawn = spawns;
     static constexpr bool can_end = ends;
 
+    static constexpr bool try_move_after_glide = false;
     static constexpr bool must_end = !can_move && !can_glide && !can_spawn;
 
     typedef TurnState<use_1(moves), 0, 0, true> AfterMove;

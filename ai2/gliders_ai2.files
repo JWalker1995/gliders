@@ -34,3 +34,5 @@ bitboard.h
 old_main.cpp
 turnstate.h
 minimax.h
+minimax.cpp
+actionlog.h

@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include "jw_util/fastmath.h"
+#include "jw_util/hash.h"
 
 template <unsigned int bits>
 class BitBoard {
@@ -30,6 +31,10 @@ public:
 	void clear() {
 		data.fill(0);
 	}
+
+    bool operator==(const BitBoard<bits> &other) const {
+        return data == other.data;
+    }
 
     BitBoard<bits> operator~() const {
         BitBoard<bits> res;
@@ -83,7 +88,7 @@ public:
 
 	template <signed int offset>
     BitBoard<bits> shift() const {
-        static_assert(abs(offset) < bits, "Cannot shift by that many bits");
+        static_assert((offset > 0 ? offset : -offset) < bits, "Cannot shift by that many bits");
 
         BitBoard<bits> res;
 
@@ -172,6 +177,14 @@ public:
     bool test(unsigned int pos) const {
         assert(pos < bits);
         return (data[pos / word_bits] >> (pos % word_bits)) & 1;
+    }
+
+    std::size_t calc_hash() const {
+        std::size_t res = data[0];
+        for (unsigned int i = 1; i < size; i++) {
+            res = jw_util::Hash::combine(res, data[i]);
+        }
+        return res;
     }
 
 private:
