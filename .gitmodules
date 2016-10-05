@@ -1,0 +1,3 @@
+[submodule "ai2/jw_util"]
+	path = ai2/jw_util
+	url = https://github.com/JWalker1995/cpp-util.git

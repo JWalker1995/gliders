@@ -341,8 +341,8 @@ module.exports = function(game_id)
         var back_left = board[piece.loc + neighbor_offsets[dir + 4]];
         if (typeof back_left !== 'object' || back_left.player_id !== current_player) {return false;}
 
-        var back_center = board[piece.loc + neighbor_offsets[dir + 3]];
-        if (back_center !== _this.CELL_EMPTY) {return false;}
+        // var back_center = board[piece.loc + neighbor_offsets[dir + 3]];
+        // if (back_center !== _this.CELL_EMPTY) {return false;}
 
         return true;
     };

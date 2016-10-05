@@ -75,6 +75,7 @@ window.onload = function()
     Util.add_class(showing_el, 'showing');
 
     var playing_game;
+    var playing_game_key;
 
     els.welcome_name.onblur = function()
     {
@@ -95,16 +96,15 @@ window.onload = function()
 
     window.onhashchange = function()
     {
-        /*
         var key = window.location.hash.substr(1);
-        if (!key) {return;}
+        if (!key || key === playing_game_key) {return;}
 
         remote.write({
             'q': 'join_game',
             'key': key,
         });
-        */
     };
+    window.onhashchange();
 
     remote.register_handler('error', function(data)
     {
@@ -145,8 +145,6 @@ window.onload = function()
 
         if (typeof data.player_id === 'number')
         {
-            window.location.hash = '#' + data.key;
-
             playing_game = summary_renderer.get_game();
             renderer.show_game(playing_game);
             renderer.play_game(playing_game, data.player_id);

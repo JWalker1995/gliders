@@ -30,8 +30,6 @@ var ServerApp = function()
     var running_games = [];
     var running_games_subscribers = [];
 
-    var game_keys = {};
-
     var write_each = function(subscribers, data, except)
     {
         for (var i = 0; i < subscribers.length; i++)
@@ -178,14 +176,10 @@ var ServerApp = function()
 
     var start_game = function(game)
     {
-        var key = Math.random().toString().substr(2, 8);
-        game_keys[key] = game;
-
         var data = {
             'q': 'open_games_pop',
             'game_id': game.get_game_id(),
             'player_id': undefined,
-            'key': key,
         };
 
         for (var i = 0; i < open_games_subscribers.length; i++)
